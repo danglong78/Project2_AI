@@ -312,14 +312,14 @@ def BFS(A_map,h,w,cur_pos,des_pos):
     exp_list=[]
     frontier=[]
     comp=False
-    frontier.append([cur_pos,cur_pos])
+    frontier.append([cur_pos.copy(),cur_pos.copy()])
     while(len(frontier)>0):
         cur=frontier[0]
-        exp_list.append([cur[0],cur[1]])
+        exp_list.append([cur[0].copy(),cur[1].copy()])
         son = next_step(A_map,cur[0],h,w)
         for i in son:
             if i==des_pos :
-                exp_list.append([des_pos,cur[0]])
+                exp_list.append([des_pos.copy(),cur[0].copy()])
                 frontier.pop(0)
                 comp=True
                 break
@@ -337,12 +337,12 @@ def BFS(A_map,h,w,cur_pos,des_pos):
                         check=False
                         break
             if check :
-                frontier.append([i,cur[0]])
+                frontier.append([i.copy(),cur[0].copy()])
         frontier.pop(0)
     re_path=[]
     cur=exp_list[-1]
     while(cur[0]!=cur_pos):
-        re_path.append(cur[0])
+        re_path.append(cur[0].copy())
         for i in exp_list:
             if i[0]==cur[1]:
                 cur=i
@@ -456,7 +456,7 @@ def Wumpus_in(A_map,cur_pos,h,w):
 
 
     # Ham cap nhat Stench
-def Update_Stench(G_map,pos,h,w):
+def Update_Stench(A_map,G_map,pos,h,w):
     for (i,z) in zip([-1,0,0,1],[0,-1,1,0]):
         if(pos[0]+i >=0) and (pos[0]+1 <h) and (pos[1]+z >=0) and (pos[1]+z <w):
             if 'W' in G_map[pos[0]+i][pos[1]+z]:
@@ -464,17 +464,19 @@ def Update_Stench(G_map,pos,h,w):
     G_map[pos[0]][pos[1]] = G_map[pos[0]][pos[1]].replace('S','')
     if(len(G_map[pos[0]][pos[1]]) ==0):
         G_map[pos[0]][pos[1]] = '-'
+    if A_map[pos[0]][pos[1]] != 'U':
+        A_map[pos[0]][pos[1]] = G_map[pos[0]][pos[1]]
     return True
 
 
     # Ham cap nhat ban do
-def Update_map(G_map,pos,h,w):
+def Update_map(A_map,G_map,pos,h,w):
     G_map[pos[0]][pos[1]] = G_map[pos[0]][pos[1]].replace('W','')
     if(len(G_map[pos[0]][pos[1]]) ==0):
         G_map[pos[0]][pos[1]] = '-'
-    for (i,z) in zip([-1,0,0,1],[0,-1,1,0]):
-        if(pos[0]+i >=0) and (pos[0]+1 <h) and (pos[1]+z >=0) and (pos[1]+z <w):
-            Update_Stench(G_map,[pos[0]+i,pos[1]+z],h,w)
+        for (i,z) in zip([-1,0,0,1],[0,-1,1,0]):
+            if(pos[0]+i >=0) and (pos[0]+1 <h) and (pos[1]+z >=0) and (pos[1]+z <w):
+                Update_Stench(A_map,G_map,[pos[0]+i,pos[1]+z],h,w)
     return True
 
 
@@ -488,11 +490,13 @@ def Using_arrow(cur_pos,A_map,G_map,h,w):
     Goal_list = Wumpus_in(A_map,cur_pos,h,w)
     for i in Goal_list:
         path.append([-1,i[0],i[1]])
-        Update_map(G_map,[i[0],i[1]],h,w)
+        Update_map(A_map,G_map,[i[0],i[1]],h,w)
         if 'S' not in G_map[cur_pos[0]][cur_pos[1]]:
             A_map[cur_pos[0]][cur_pos[1]] = G_map[cur_pos[0]][cur_pos[1]]
-            cur_pos = i
+            cur_pos[0] = i[0]
+            cur_pos[1] = i[1]
             path.append(cur_pos)
+            return path
             break
     return path
 
@@ -528,29 +532,26 @@ def Play_Game(file_name):
             if len(temp_path) ==0:
                 break
             path = path + temp_path
+            cur_pos[0] = path[-1][0]
+            cur_pos[1] = path[-1][1]
             can_go = True
-
         # Neu khong ban cung duoc thi se thoat game:
         if(not can_go):
             break
 
         # Neu da co the di hoac ban duoc Wumpus thi cap nhat A_map
         A_map[cur_pos[0]][cur_pos[1]] = G_map[cur_pos[0]][cur_pos[1]]
+        if 'G' in A_map[cur_pos[0]][cur_pos[1]]:
+            A_map[cur_pos[0]][cur_pos[1]] = A_map[cur_pos[0]][cur_pos[1]].replace('G','')
+            if len(A_map[cur_pos[0]][cur_pos[1]]) ==0:
+                A_map[cur_pos[0]][cur_pos[1]] = '-'
+            G_map[cur_pos[0]][cur_pos[1]] = A_map[cur_pos[0]][cur_pos[1]]
 
 
     # Ket thuc vong lap tro choi:
 
     # tim duong ve cua hang
-    temp_path = temp_path = BFS(A_map,h,w,cur_pos,Start_pos)
+    temp_path = BFS(A_map,h,w,cur_pos,Start_pos)
     path = path + temp_path
     return path
-
-
-
-## test
-#path = Play_Game('Wumpus.txt')
-#print(len(path))
-#for i in path:
-#    print(i)
-
 

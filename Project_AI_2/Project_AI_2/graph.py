@@ -10,7 +10,7 @@ ht()
 penup()
 setpos(0,300)
 color("black")
-write("project 1",align="center" ,font=("arial",50,"normal"))
+write("PROJECT 2",align="center" ,font=("arial",50,"normal"))
 
 
 def input_shape():
