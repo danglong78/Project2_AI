@@ -64,8 +64,7 @@ all_shape={
   #---------------------------------------------
 def graphic_loadmap(fi):
     map_game=[]
-    food=[]
-    monster=[]
+
     f = open(fi, "r")
     if f.mode == "r":
         line =f.readline()
@@ -91,8 +90,8 @@ class Pen(Turtle):
     def draw_map(self,map,h,w):
         x=-((w//2))*square
         y=(h//2)*square
-        gold=[]
-        monster=[]
+        gold=0
+        monster=0
         self.st()
         list_wall={(x,y):self.clone() for x in range(h) for y in range(w)}
         
@@ -103,7 +102,11 @@ class Pen(Turtle):
                     temp.shape(all_shape[map[i][j]])
                     temp.s=all_shape[map[i][j]]
                     temp.goto(x+j*square,y-i*square)
-           
+                    if temp.s== gold_shape or temp.s== bsg_shape or temp.s== sg_shape or temp.s==bg_shape or map[i][j]=='WG' or map[i][j]=='GW':
+                        gold+=1
+                    if temp.s== wumpus_shape or map[i][j]=='WG' or map[i][j]=='GW':
+                        monster+=1
+
                 else:
                     #()
                     temp= list_wall[(i,j)]
@@ -111,7 +114,10 @@ class Pen(Turtle):
                     temp.shape(wall_shape)
                     temp.goto(x+j*square,y-i*square) 
         self.ht()
-        return x,y,list_wall
+        self.shape('arrow')
+        self.pen(fillcolor="black", pencolor="black", pensize=10)
+        self.goto(300,300)
+        return x,y,list_wall,gold,monster
 
 
 
@@ -171,10 +177,9 @@ class Map:
     def __init__(self, filename):
         self.map,self.n,player=graphic_loadmap(filename)
         self.outline=Pen(wall_shape)
-        x0,y0,self.list_wall,=self.outline.draw_map(self.map,self.n,self.n)
+        x0,y0,self.list_wall,self.gold,self.wumpus=self.outline.draw_map(self.map,self.n,self.n)
         self.p=Player(player_shape,player[0],player[1])
         self.p.start(x0+player[1]*square,y0-player[0]*square)
-        self.eaten=0
         self.score=0
         self.hide_all()
         self.explore()
@@ -197,33 +202,52 @@ class Map:
             self.map[i][j]='-'
             self.list_wall[(i,j)].shape(wall_shape)
             self.list_wall[(i,j)].s=wall_shape
+            self.score+=100
+            self.gold-=1
         elif self.list_wall[i,j].s==sg_shape:
             self.map[i][j]='S'
             self.list_wall[(i,j)].shape(stench_shape)
             self.list_wall[(i,j)].s=stench_shape
+            self.score+=100
+            self.gold-=1
         elif self.list_wall[i,j].s==bsg_shape:
             self.map[i][j]='BS'
             self.list_wall[(i,j)].shape(bs_shape)
             self.list_wall[(i,j)].s=bs_shape
+            self.score+=100
+            self.gold-=1
         elif self.list_wall[i,j].s==bg_shape:
             self.map[i][j]='B'
             self.list_wall[(i,j)].shape(breeze_shape)
             self.list_wall[(i,j)].s=breeze_shape
-
+            self.score+=100
+            self.gold-=1
             
     def game(self,step):
         for i in step:
+            self.outline.st()
+            self.outline.write(self.score,align="center" ,font=("Arial",30,"normal"))
+            self.outline.ht()
+            if self.gold==0 and self.wumpus==0:
+                break
             if len(i)==2:
                 self.p.move(i)
+                self.score-=10
                 self.explore()
                 if self.is_beat():
+                    self.score-=10000
                     break
                 self.eat_gold()
             elif len(i)==3:
                 self.p.shoot(shoot_shape,(i[1],i[2]))
+                self.score-=100
                 self.remove_wumpus(i[1],i[2])
+            if i== step[-1] and i==(y0,x0):
+                self.score+=20
+            self.outline.clear()
     def remove_wumpus(self,i,j):
         if self.map[i][j]=='WG' or self.map[i][j]=='GW' :
+            self.wumpus-=1
             self.map[i][j]='G'
             self.list_wall[(i,j)].shape(gold_shape)
             self.list_wall[(i,j)].s=gold_shape
@@ -246,6 +270,7 @@ class Map:
                     self.list_wall[(s1,s2)].shape(gold_shape)
                     self.list_wall[(s1,s2)].s=gold_shape
         elif self.map[i][j]=='W':
+            self.wumpus-=1
             self.list_wall[(i,j)].shape(wall_shape)
             self.list_wall[(i,j)].s=wall_shape
             self.map[i][j]='-'
@@ -280,7 +305,7 @@ class Map:
         penup()
         setpos(0,300)
         color("black")
-        write("PROJECT 1",align="center" ,font=("Arial",50,"normal"))
+        write("PROJECT 2",align="center" ,font=("Arial",50,"normal"))
         self.p.ht()
         self.outline.ht()
         penup()
