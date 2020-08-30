@@ -242,7 +242,7 @@ class Map:
                 self.p.shoot(shoot_shape,(i[1],i[2]))
                 self.score-=100
                 self.remove_wumpus(i[1],i[2])
-            if i== step[-1] and i==(y0,x0):
+            if i== step[-1] and self.map[i[0]][i[1]]=='A':
                 self.score+=20
             self.outline.clear()
     def remove_wumpus(self,i,j):

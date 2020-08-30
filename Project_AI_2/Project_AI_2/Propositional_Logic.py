@@ -1,4 +1,5 @@
 import re
+import time
 class KB: #Propositional Logic KB
     def __init__(self,sentence=None):
         self.clauses=[]
@@ -147,19 +148,38 @@ def pl_resolve(ci,cj):
          return[]  
 def pl_resolution(KB,alpha):
     clauses=KB.clauses+ conjunct(to_cnf(alpha))
+    pair = [(clauses[i], clauses[j]) for i in range(len(clauses)) for j in range(i+1,len(clauses)) ]
     new=set()
+    s=0
+    i=0
     while True:
-        n = len(clauses)
-        pairs = [(clauses[i], clauses[j]) for i in range(n) for j in range(i+1, n)]
-        for (ci, cj) in pairs:
+        for (ci, cj) in pair:
             resolvents = pl_resolve(ci, cj)
             if type(resolvents)==str: 
                 return True  
             new.update(set(resolvents))
         if new.issubset(set(clauses)): 
             return False
+        pair.clear()
+        pair=[(i,j) for i in clauses for j in list(new)[s:] ]+ [ (list(new)[i], list(new)[j]) for i in range(s,len(new)) for j in range(i+1, len(new))]
+        s=len(new)
         for c in new:
-            if c not in clauses: clauses.append(c)       
+            if c not in clauses: clauses.append(c)  
+#def pl_resolution(KB,alpha):
+#    clauses=KB.clauses+ conjunct(to_cnf(alpha))
+#    new=set()
+#    while True:
+#        n = len(clauses)
+#        pairs = [(clauses[i], clauses[j]) for i in range(n) for j in range(i+1, n)]
+#        for (ci, cj) in pairs:
+#            resolvents = pl_resolve(ci, cj)
+#            if type(resolvents)==str: 
+#                return True  
+#            new.update(set(resolvents))
+#        if new.issubset(set(clauses)): 
+#            return False
+#        for c in new:
+#            if c not in clauses: clauses.append(c)       
             
 
         # Ham them thong tin 1 o vao KB:
@@ -354,10 +374,17 @@ def BFS(A_map,h,w,cur_pos,des_pos):
         # Ham kiem tra 1 o unexplored
 def Check(A_map,pos,h,w):
     Near_list = []
+    have_breeze=False
+    have_stench= False
     for (i,z) in zip([-1,0,0,1],[0,-1,1,0]):
         if (pos[0]+i >=0) and (pos[0]+i <h) and (pos[1]+z >=0) and (pos[1]+z <w):
             if A_map[pos[0]+i][pos[1]+z] != 'U':
                 Near_list.append([pos[0]+i,pos[1]+z])
+                if 'B' in A_map[pos[0]+i][pos[1]+z]:
+                    have_breeze=True
+                if 'S' in A_map[pos[0]+i][pos[1]+z]:
+                    have_stench=True
+
     if len(Near_list)==0:
         return False
 
@@ -366,30 +393,38 @@ def Check(A_map,pos,h,w):
     # them thong tin cho KB
     for i in Near_list:
         Add_Clause(kb,A_map,i,w,h)
-
+    print(kb.clauses)
+    print('1 S')
     state = ''
-    # kiem tra xem co Wumpus:
-    clause = '(-W'+str(pos[0])+str(pos[1])+')'
-    result = pl_resolution(kb,clause)
-    if result:
-        state+='W'      # co Wumpus
-    else:
-        clause = '(W'+str(pos[0])+str(pos[1])+')'
+    if have_stench:
+        # kiem tra xem co Wumpus:
+        clause = '(-W'+str(pos[0])+str(pos[1])+')'
         result = pl_resolution(kb,clause)
         if result:
-            state +='-W'
-
-    #kiem tra xem co Pit:
-    clause = '(-P'+str(pos[0])+str(pos[1])+')'
-    result = pl_resolution(kb,clause)
-    if result:
-        state+='P'      # co Pit
+            state+='W'      # co Wumpus
+        else:
+            clause = '(W'+str(pos[0])+str(pos[1])+')'
+            result = pl_resolution(kb,clause)
+            if result:
+                state +='-W'
     else:
-        clause = '(P'+str(pos[0])+str(pos[1])+')'
+        state +='-W'
+    print('2 S')
+    print('1 B')
+    if have_breeze:
+        #kiem tra xem co Pit:
+        clause = '(-P'+str(pos[0])+str(pos[1])+')'
         result = pl_resolution(kb,clause)
         if result:
-            state += '-P'
-    
+            state+='P'      # co Pit
+        else:
+            clause = '(P'+str(pos[0])+str(pos[1])+')'
+            result = pl_resolution(kb,clause)
+            if result:
+                state += '-P'
+    else:
+        state +='-P'
+    print('2 B')
     if state == '':     #khong xac dinh
         A_map[pos[0]][pos[1]]='U'
         return False
@@ -515,13 +550,16 @@ def Play_Game(file_name):
         # Xet tat ca cac o unexplored co the di
         next_list = Can_Reach(A_map,h,w,cur_pos)
         for pos in next_list:
+            print(pos)
             can_go = Check(A_map,pos,h,w)
+            print(pos)
             if(can_go):
                 temp_path = BFS(A_map,h,w,cur_pos,pos)
                 if len(temp_path) == 0:
                     can_go = False
                 else:
                     path = path + temp_path
+                    #print(path)
                     cur_pos = pos
                     can_go = True
                     break
