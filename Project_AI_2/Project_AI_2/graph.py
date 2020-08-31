@@ -181,6 +181,8 @@ class Map:
         self.p=Player(player_shape,player[0],player[1])
         self.p.start(x0+player[1]*square,y0-player[0]*square)
         self.score=0
+        self.arrow=0
+        self.RS=(self.gold,self.wumpus)
         self.hide_all()
         self.explore()
 
@@ -240,6 +242,7 @@ class Map:
                 self.eat_gold()
             elif len(i)==3:
                 self.p.shoot(shoot_shape,(i[1],i[2]))
+                self.arrow+=1
                 self.score-=100
                 self.remove_wumpus(i[1],i[2])
             if i== step[-1] and self.map[i[0]][i[1]]=='A':
@@ -251,48 +254,14 @@ class Map:
             self.map[i][j]='G'
             self.list_wall[(i,j)].shape(gold_shape)
             self.list_wall[(i,j)].s=gold_shape
-            surround=get_surround(self.n,self.n,i,j)
-            for (s1,s2) in surround:
-                if self.list_wall[(s1,s2)].s==stench_shape:
-                    self.map[s1][s2]='-'
-                    self.list_wall[(s1,s2)].shape(wall_shape)
-                    self.list_wall[(s1,s2)].s=wall_shape
-                elif self.list_wall[(s1,s2)].s==bsg_shape:
-                    self.map[s1][s2]='BG'               
-                    self.list_wall[(s1,s2)].shape(bg_shape)
-                    self.list_wall[(s1,s2)].s=bg_shape
-                elif self.list_wall[(s1,s2)].s==bs_shape:
-                    self.map[s1][s2]='B'               
-                    self.list_wall[(s1,s2)].shape(breeze_shape)
-                    self.list_wall[(s1,s2)].s=breeze_shape
-                elif self.list_wall[(s1,s2)].s==sg_shape:
-                    self.map[s1][s2]='G'
-                    self.list_wall[(s1,s2)].shape(gold_shape)
-                    self.list_wall[(s1,s2)].s=gold_shape
+           
         elif self.map[i][j]=='W':
             self.wumpus-=1
             self.list_wall[(i,j)].shape(wall_shape)
             self.list_wall[(i,j)].s=wall_shape
             self.map[i][j]='-'
             surround=get_surround(self.n,self.n,i,j)
-            for (s1,s2) in surround:
-                if self.list_wall[(s1,s2)].s==stench_shape:
-                    self.map[s1][s2]='-'
-                    self.list_wall[(s1,s2)].shape(wall_shape)
-                    self.list_wall[(s1,s2)].s=wall_shape
-                elif self.list_wall[(s1,s2)].s==bsg_shape:
-                    self.map[s1][s2]='BG'               
-                    self.list_wall[(s1,s2)].shape(bg_shape)
-                    self.list_wall[(s1,s2)].s=bg_shape
-                elif self.list_wall[(s1,s2)].s==bs_shape:
-                    self.map[s1][s2]='B'               
-                    self.list_wall[(s1,s2)].shape(breeze_shape)
-                    self.list_wall[(s1,s2)].s=breeze_shape
-                elif self.list_wall[(s1,s2)].s==sg_shape:
-                    self.map[s1][s2]='G'
-                    self.list_wall[(s1,s2)].shape(gold_shape)
-                    self.list_wall[(s1,s2)].s=gold_shape
-
+         
 
 
     
@@ -309,10 +278,22 @@ class Map:
         self.p.ht()
         self.outline.ht()
         penup()
-        setpos(0,50)
         color("black")
         setpos(0,0)
         write("SCORE: "+str(self.score),align="center" ,font=("Arial",40,"normal"))
+        penup()
+        color("black")
+        setpos(0,-60)
+        write("GOLD: "+str(self.RS[0]-self.gold)+'/'+str(self.RS[0]),align="center" ,font=("Arial",40,"normal"))
+        penup()
+        color("black")
+        setpos(0,-120)
+        write("WUMPUS KILLED: "+str(self.RS[1]-self.wumpus)+'/'+str(self.RS[1]),align="center" ,font=("Arial",40,"normal"))
+        penup()
+        color("black")
+        setpos(0,-180)
+        write("ARROW: "+str(self.arrow),align="center" ,font=("Arial",40,"normal"))
+
 
 
 def get_surround(h,w,i,j):

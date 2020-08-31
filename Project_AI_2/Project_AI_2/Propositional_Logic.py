@@ -1,5 +1,4 @@
 import re
-import time
 class KB: #Propositional Logic KB
     def __init__(self,sentence=None):
         self.clauses=[]
@@ -373,6 +372,7 @@ def BFS(A_map,h,w,cur_pos,des_pos):
 
         # Ham kiem tra 1 o unexplored
 def Check(A_map,pos,h,w):
+    print('Thinking about (' + str(pos[1]) + ' , ' + str(pos[1]) + '):')
     Near_list = []
     have_breeze=False
     have_stench= False
@@ -393,38 +393,50 @@ def Check(A_map,pos,h,w):
     # them thong tin cho KB
     for i in Near_list:
         Add_Clause(kb,A_map,i,w,h)
-    print(kb.clauses)
-    print('1 S')
     state = ''
+    print('Having Wumpus?')
     if have_stench:
         # kiem tra xem co Wumpus:
         clause = '(-W'+str(pos[0])+str(pos[1])+')'
         result = pl_resolution(kb,clause)
         if result:
+            print('Yes')
             state+='W'      # co Wumpus
         else:
+            print('Unknow')
+            print('Not having Wunpus?')
             clause = '(W'+str(pos[0])+str(pos[1])+')'
             result = pl_resolution(kb,clause)
             if result:
+                print('Yes')
                 state +='-W'
+            else:
+                print('Unknow')
     else:
+        print('No')
         state +='-W'
-    print('2 S')
-    print('1 B')
+    print('Having Pit?')
     if have_breeze:
         #kiem tra xem co Pit:
         clause = '(-P'+str(pos[0])+str(pos[1])+')'
         result = pl_resolution(kb,clause)
         if result:
+            print('Yes')
             state+='P'      # co Pit
         else:
+            print('Unknow')
+            print('Not having Pit?')
             clause = '(P'+str(pos[0])+str(pos[1])+')'
             result = pl_resolution(kb,clause)
             if result:
+                print('Yes')
                 state += '-P'
+            else:
+                print('Unknow')
     else:
+        print('No')
         state +='-P'
-    print('2 B')
+    print("====================================================")
     if state == '':     #khong xac dinh
         A_map[pos[0]][pos[1]]='U'
         return False
@@ -495,13 +507,15 @@ def Update_Stench(A_map,G_map,pos,h,w):
     for (i,z) in zip([-1,0,0,1],[0,-1,1,0]):
         if(pos[0]+i >=0) and (pos[0]+1 <h) and (pos[1]+z >=0) and (pos[1]+z <w):
             if 'W' in G_map[pos[0]+i][pos[1]+z]:
-                return True
+                if A_map[pos[0]][pos[1]] != 'U':
+                    A_map[pos[0]][pos[1]] = G_map[pos[0]][pos[1]]
+                return None
     G_map[pos[0]][pos[1]] = G_map[pos[0]][pos[1]].replace('S','')
     if(len(G_map[pos[0]][pos[1]]) ==0):
         G_map[pos[0]][pos[1]] = '-'
     if A_map[pos[0]][pos[1]] != 'U':
         A_map[pos[0]][pos[1]] = G_map[pos[0]][pos[1]]
-    return True
+    return None
 
 
     # Ham cap nhat ban do
@@ -509,9 +523,9 @@ def Update_map(A_map,G_map,pos,h,w):
     G_map[pos[0]][pos[1]] = G_map[pos[0]][pos[1]].replace('W','')
     if(len(G_map[pos[0]][pos[1]]) ==0):
         G_map[pos[0]][pos[1]] = '-'
-        for (i,z) in zip([-1,0,0,1],[0,-1,1,0]):
-            if(pos[0]+i >=0) and (pos[0]+1 <h) and (pos[1]+z >=0) and (pos[1]+z <w):
-                Update_Stench(A_map,G_map,[pos[0]+i,pos[1]+z],h,w)
+    for (i,z) in zip([-1,0,0,1],[0,-1,1,0]):
+        if(pos[0]+i >=0) and (pos[0]+1 <h) and (pos[1]+z >=0) and (pos[1]+z <w):
+            Update_Stench(A_map,G_map,[pos[0]+i,pos[1]+z],h,w)
     return True
 
 
@@ -532,7 +546,6 @@ def Using_arrow(cur_pos,A_map,G_map,h,w):
             cur_pos[1] = i[1]
             path.append(cur_pos)
             return path
-            break
     return path
 
 
@@ -550,22 +563,22 @@ def Play_Game(file_name):
         # Xet tat ca cac o unexplored co the di
         next_list = Can_Reach(A_map,h,w,cur_pos)
         for pos in next_list:
-            print(pos)
             can_go = Check(A_map,pos,h,w)
-            print(pos)
             if(can_go):
                 temp_path = BFS(A_map,h,w,cur_pos,pos)
                 if len(temp_path) == 0:
                     can_go = False
                 else:
                     path = path + temp_path
-                    #print(path)
                     cur_pos = pos
                     can_go = True
                     break
 
         # Neu khong tim duoc o moi thi den o co stench de dung cung
         if(not can_go):
+            print('-----------------------------')
+            for i in A_map:
+                print(i)
             temp_path = Using_arrow(cur_pos,A_map,G_map,h,w)
             if len(temp_path) ==0:
                 break
@@ -590,6 +603,12 @@ def Play_Game(file_name):
 
     # tim duong ve cua hang
     temp_path = BFS(A_map,h,w,cur_pos,Start_pos)
+    print(temp_path)
     path = path + temp_path
+    print('-----------------------------')
+    print(path)
+    print('-----------------------------')
+    for i in A_map:
+        print(i)
     return path
 
