@@ -199,9 +199,9 @@ def Add_Clause(K_B,maze,pos,w,h):
     else:
         new_clause = '('
         for i in next:
-            new_clause += ('-P'+str(i[0])+str(i[1])+'|')
-        new_clause = (new_clause[:-1] + ')')
-        K_B.tell(to_cnf(new_clause))
+            new_clause = '('
+            new_clause += ('-P'+str(i[0])+str(i[1])+')')
+            K_B.tell(to_cnf(new_clause))
 
 
     if 'S' in cur_state:        # co mui
@@ -213,9 +213,9 @@ def Add_Clause(K_B,maze,pos,w,h):
     else:
         new_clause = '('
         for i in next:
-            new_clause += ('-W'+str(i[0])+str(i[1])+'|')
-        new_clause = (new_clause[:-1] + ')')
-        K_B.tell(to_cnf(new_clause))
+            new_clause = '('
+            new_clause += ('-W'+str(i[0])+str(i[1])+')')
+            K_B.tell(to_cnf(new_clause))
 
 
     if 'W' in cur_state:        # co Wumpus
@@ -372,7 +372,7 @@ def BFS(A_map,h,w,cur_pos,des_pos):
 
         # Ham kiem tra 1 o unexplored
 def Check(A_map,pos,h,w):
-    print('Thinking about (' + str(pos[1]) + ' , ' + str(pos[1]) + '):')
+    print('Thinking about (' + str(h-pos[0]+1) + ' , ' + str(pos[1]) + '):')
     Near_list = []
     have_breeze=False
     have_stench= False
@@ -397,7 +397,7 @@ def Check(A_map,pos,h,w):
     print('Having Wumpus?')
     if have_stench:
         # kiem tra xem co Wumpus:
-        clause = '(-W'+str(pos[0])+str(pos[1])+')'
+        clause = '(-W'+str(h-pos[0]+1)+str(pos[1])+')'
         result = pl_resolution(kb,clause)
         if result:
             print('Yes')
@@ -405,7 +405,7 @@ def Check(A_map,pos,h,w):
         else:
             print('Unknow')
             print('Not having Wunpus?')
-            clause = '(W'+str(pos[0])+str(pos[1])+')'
+            clause = '(W'+str(h-pos[0]+1)+str(pos[1])+')'
             result = pl_resolution(kb,clause)
             if result:
                 print('Yes')
@@ -418,7 +418,7 @@ def Check(A_map,pos,h,w):
     print('Having Pit?')
     if have_breeze:
         #kiem tra xem co Pit:
-        clause = '(-P'+str(pos[0])+str(pos[1])+')'
+        clause = '(-P'+str(h-pos[0]+1)+str(pos[1])+')'
         result = pl_resolution(kb,clause)
         if result:
             print('Yes')
@@ -426,7 +426,7 @@ def Check(A_map,pos,h,w):
         else:
             print('Unknow')
             print('Not having Pit?')
-            clause = '(P'+str(pos[0])+str(pos[1])+')'
+            clause = '(P'+str(h-pos[0]+1)+str(pos[1])+')'
             result = pl_resolution(kb,clause)
             if result:
                 print('Yes')
@@ -477,11 +477,36 @@ def Find_Stench(A_map,cur_pos,h,w):
 
     # Ham do uu tien
 def Count_Stench(A_map,pos,h,w):
-    count=0
+    
     if 'W' in A_map[pos[0]][pos[1]]:
         return -100
+    Near_list = []
+    have_breeze=False
+    have_stench= False
     for (i,z) in zip([-1,0,0,1],[0,-1,1,0]):
-        if(pos[0]+i >=0) and (pos[0]+1 <h) and (pos[1]+z >=0) and (pos[1]+z <w):
+        if (pos[0]+i >=0) and (pos[0]+i <h) and (pos[1]+z >=0) and (pos[1]+z <w):
+            if A_map[pos[0]+i][pos[1]+z] != 'U':
+                Near_list.append([pos[0]+i,pos[1]+z])
+
+    # tao KB
+    kb = KB()
+    # them thong tin cho KB
+    for i in Near_list:
+        Add_Clause(kb,A_map,i,w,h)
+        # kiem tra xem co Wumpus:
+    for i in kb.clauses:
+        print(i)
+    clause = '(-W'+str(pos[0])+str(pos[1])+')'
+    result = pl_resolution(kb,clause)
+    if result:
+        return -100
+    clause = '(W'+str(pos[0])+str(pos[1])+')'
+    result = pl_resolution(kb,clause)
+    if result:
+        return 100
+    count=0
+    for (i,z) in zip([-1,0,0,1],[0,-1,1,0]):
+        if(pos[0]+i >=0) and (pos[0]+i <h) and (pos[1]+z >=0) and (pos[1]+z <w):
             if 'S' in A_map[pos[0]+i][pos[1]+z]:
                 count = count-1
     return count
@@ -492,7 +517,7 @@ def Count_Stench(A_map,pos,h,w):
 def Wumpus_in(A_map,cur_pos,h,w):
     result_list = []
     for (i,z) in zip([-1,0,0,1],[0,-1,1,0]):
-        if(cur_pos[0]+i >=0) and (cur_pos[0]+1 <h) and (cur_pos[1]+z >=0) and (cur_pos[1]+z <w):
+        if(cur_pos[0]+i >=0) and (cur_pos[0]+i <h) and (cur_pos[1]+z >=0) and (cur_pos[1]+z <w):
             if ('U' in A_map[cur_pos[0]+i][cur_pos[1]+z]) or ('W' in A_map[cur_pos[0]+i][cur_pos[1]+z]):
                 result_list.append([cur_pos[0]+i,cur_pos[1]+z])
     if len(result_list) ==0:
@@ -505,7 +530,7 @@ def Wumpus_in(A_map,cur_pos,h,w):
     # Ham cap nhat Stench
 def Update_Stench(A_map,G_map,pos,h,w):
     for (i,z) in zip([-1,0,0,1],[0,-1,1,0]):
-        if(pos[0]+i >=0) and (pos[0]+1 <h) and (pos[1]+z >=0) and (pos[1]+z <w):
+        if(pos[0]+i >=0) and (pos[0]+i <h) and (pos[1]+z >=0) and (pos[1]+z <w):
             if 'W' in G_map[pos[0]+i][pos[1]+z]:
                 if A_map[pos[0]][pos[1]] != 'U':
                     A_map[pos[0]][pos[1]] = G_map[pos[0]][pos[1]]
@@ -524,7 +549,7 @@ def Update_map(A_map,G_map,pos,h,w):
     if(len(G_map[pos[0]][pos[1]]) ==0):
         G_map[pos[0]][pos[1]] = '-'
     for (i,z) in zip([-1,0,0,1],[0,-1,1,0]):
-        if(pos[0]+i >=0) and (pos[0]+1 <h) and (pos[1]+z >=0) and (pos[1]+z <w):
+        if(pos[0]+i >=0) and (pos[0]+i <h) and (pos[1]+z >=0) and (pos[1]+z <w):
             Update_Stench(A_map,G_map,[pos[0]+i,pos[1]+z],h,w)
     return True
 
@@ -535,7 +560,9 @@ def Using_arrow(cur_pos,A_map,G_map,h,w):
     if len(Stench_pos)==0:
         return []
     path = BFS(A_map,h,w,cur_pos,Stench_pos)
-    cur_pos = Stench_pos
+
+    if(len(path)>0):
+        cur_pos = path[-1].copy()
     Goal_list = Wumpus_in(A_map,cur_pos,h,w)
     for i in Goal_list:
         path.append([-1,i[0],i[1]])
@@ -576,9 +603,7 @@ def Play_Game(file_name):
 
         # Neu khong tim duoc o moi thi den o co stench de dung cung
         if(not can_go):
-            print('-----------------------------')
-            for i in A_map:
-                print(i)
+
             temp_path = Using_arrow(cur_pos,A_map,G_map,h,w)
             if len(temp_path) ==0:
                 break
@@ -603,12 +628,13 @@ def Play_Game(file_name):
 
     # tim duong ve cua hang
     temp_path = BFS(A_map,h,w,cur_pos,Start_pos)
-    print(temp_path)
     path = path + temp_path
     print('-----------------------------')
-    print(path)
+    rs=[list(i) for i in path]
+    for i in range(len(rs)):
+        rs[i][0]=h-rs[i][0]+1
+    print(rs)
     print('-----------------------------')
-    for i in A_map:
-        print(i)
+
     return path
 
